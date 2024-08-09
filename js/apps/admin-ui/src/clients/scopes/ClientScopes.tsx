@@ -22,7 +22,7 @@ import {
   nameFilter,
   typeFilter,
 } from "../../client-scopes/details/SearchFilter";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   AllClientScopeType,
   AllClientScopes,
@@ -298,6 +298,7 @@ export const ClientScopes = ({
                 </ToolbarItem>
                 <ToolbarItem>
                   <Dropdown
+                    onOpenChange={(isOpen) => setKebabOpen(isOpen)}
                     toggle={(ref) => (
                       <MenuToggle
                         data-testid="kebab"

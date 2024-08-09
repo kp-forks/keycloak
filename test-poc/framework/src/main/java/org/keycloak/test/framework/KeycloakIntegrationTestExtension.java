@@ -1,24 +1,25 @@
 package org.keycloak.test.framework;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
 import org.keycloak.test.framework.injection.Registry;
 
-public class KeycloakIntegrationTestExtension implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
-
-    @Override
-    public void beforeAll(ExtensionContext context) {
-        if (isExtensionEnabled(context)) {
-            getRegistry(context).beforeAll(context.getRequiredTestClass());
-        }
-    }
+public class KeycloakIntegrationTestExtension implements BeforeEachCallback, AfterEachCallback, AfterAllCallback {
 
     @Override
     public void beforeEach(ExtensionContext context) {
         if (isExtensionEnabled(context)) {
             getRegistry(context).beforeEach(context.getRequiredTestInstance());
+        }
+    }
+
+    @Override
+    public void afterEach(ExtensionContext context) throws Exception {
+        if (isExtensionEnabled(context)) {
+            getRegistry(context).afterEach();
         }
     }
 
@@ -35,7 +36,7 @@ public class KeycloakIntegrationTestExtension implements BeforeAllCallback, Afte
 
     private Registry getRegistry(ExtensionContext context) {
         ExtensionContext.Store store = getStore(context);
-        Registry registry = (Registry) store.getOrComputeIfAbsent(Registry.class, r -> new Registry());
+        Registry registry = (Registry) store.getOrComputeIfAbsent(Registry.class, r -> createRegistry());
         registry.setCurrentContext(context);
         return registry;
     }
@@ -45,6 +46,12 @@ public class KeycloakIntegrationTestExtension implements BeforeAllCallback, Afte
             context = context.getParent().get();
         }
         return context.getStore(ExtensionContext.Namespace.create(getClass()));
+    }
+
+    private Registry createRegistry() {
+        Registry registry = new Registry();
+        Runtime.getRuntime().addShutdownHook(new Thread(registry::close));
+        return registry;
     }
 
 }

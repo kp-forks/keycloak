@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import {
   NumberControl,
   SelectControl,
+  TextAreaControl,
   TextControl,
 } from "@keycloak/keycloak-ui-shared";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
@@ -83,7 +84,6 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           labelIcon={t("singleLogoutServiceUrlHelp")}
           type="url"
           readOnly={readOnly}
-          rules={{ required: t("required") }}
         />
         <DefaultSwitchControl
           name="config.backchannelSupported"
@@ -296,11 +296,13 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
               name="config.useMetadataDescriptorUrl"
               label={t("useMetadataDescriptorUrl")}
               isDisabled={readOnly}
+              stringify
             />
             {useMetadataDescriptorUrl !== "true" && (
-              <TextControl
+              <TextAreaControl
                 name="config.signingCertificate"
                 label={t("validatingX509Certs")}
+                labelIcon={t("validatingX509CertsHelp")}
                 readOnly={readOnly}
               />
             )}

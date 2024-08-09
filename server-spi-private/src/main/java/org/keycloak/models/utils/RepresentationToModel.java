@@ -563,7 +563,7 @@ public class RepresentationToModel {
     }
 
     private static String determineNewSecret(ClientModel client, ClientRepresentation rep) {
-        if (Boolean.TRUE.equals(rep.isPublicClient()) || Boolean.TRUE.equals(rep.isBearerOnly())) {
+        if (client.isPublicClient() || client.isBearerOnly()) {
             // Clear out the secret with null
             return null;
         }
@@ -1058,7 +1058,7 @@ public class RepresentationToModel {
             Set<String> keys = new HashSet<>(rep.getConfig().keySet());
             for (String k : keys) {
                 if (!internal && !providerConfiguration.containsKey(k)) {
-                    break;
+                    continue;
                 }
 
                 List<String> values = rep.getConfig().get(k);

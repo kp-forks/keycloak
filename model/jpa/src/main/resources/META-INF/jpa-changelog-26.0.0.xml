@@ -45,4 +45,32 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.0.0-org-group-membership">
+        <addColumn tableName="USER_GROUP_MEMBERSHIP">
+            <column name="MEMBERSHIP_TYPE" type="VARCHAR(255)"/>
+        </addColumn>
+        <update tableName="USER_GROUP_MEMBERSHIP">
+            <column name="MEMBERSHIP_TYPE" value="UNMANAGED"/>
+        </update>
+        <addNotNullConstraint tableName="USER_GROUP_MEMBERSHIP" columnName="MEMBERSHIP_TYPE" columnDataType="VARCHAR(255)"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="31296-persist-revoked-access-tokens">
+        <createTable tableName="REVOKED_TOKEN">
+            <column name="ID" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="EXPIRE" type="BIGINT">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_RT" tableName="REVOKED_TOKEN"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="31725-index-persist-revoked-access-tokens">
+        <createIndex indexName="IDX_REV_TOKEN_ON_EXPIRE" tableName="REVOKED_TOKEN">
+            <column name="EXPIRE" />
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

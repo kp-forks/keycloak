@@ -20,7 +20,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { translationFormatter } from "../clients/ClientsSection";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
@@ -78,9 +78,9 @@ export const PoliciesTab = () => {
 
       const allClientPolicies = globalPolicies?.concat(policies ?? []);
 
-      setPolicies(allClientPolicies),
-        setTablePolicies(allClientPolicies || []),
-        setCode(prettyPrintJSON(allClientPolicies));
+      setPolicies(allClientPolicies);
+      setTablePolicies(allClientPolicies || []);
+      setCode(prettyPrintJSON(allClientPolicies));
     },
     [key],
   );

@@ -3,65 +3,60 @@ package org.keycloak.test.framework.realm;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.test.framework.TestRealm;
-import org.keycloak.test.framework.injection.InstanceWrapper;
-import org.keycloak.test.framework.injection.LifeCycle;
-import org.keycloak.test.framework.injection.Registry;
+import org.keycloak.test.framework.annotations.InjectRealm;
+import org.keycloak.test.framework.injection.InstanceContext;
+import org.keycloak.test.framework.injection.RequestedInstance;
 import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.injection.SupplierHelpers;
+import org.keycloak.test.framework.server.KeycloakTestServer;
 
-public class RealmSupplier implements Supplier<RealmResource, TestRealm> {
+public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
 
     private static final String REALM_NAME_KEY = "realmName";
 
     @Override
-    public Class<TestRealm> getAnnotationClass() {
-        return TestRealm.class;
+    public Class<InjectRealm> getAnnotationClass() {
+        return InjectRealm.class;
     }
 
     @Override
-    public Class<RealmResource> getValueType() {
-        return RealmResource.class;
+    public Class<ManagedRealm> getValueType() {
+        return ManagedRealm.class;
     }
 
     @Override
-    public InstanceWrapper<RealmResource, TestRealm> getValue(Registry registry, TestRealm annotation) {
-        InstanceWrapper<RealmResource, TestRealm> wrapper = new InstanceWrapper<>(this, annotation);
+    public ManagedRealm getValue(InstanceContext<ManagedRealm, InjectRealm> instanceContext) {
+        KeycloakTestServer server = instanceContext.getDependency(KeycloakTestServer.class);
+        Keycloak adminClient = instanceContext.getDependency(Keycloak.class);
 
-        Keycloak adminClient = registry.getDependency(Keycloak.class, wrapper);
-
-        RealmConfig config = SupplierHelpers.getInstance(annotation.config());
+        RealmConfig config = (RealmConfig) SupplierHelpers.getInstance(instanceContext.getConfig());
         RealmRepresentation realmRepresentation = config.getRepresentation();
 
         if (realmRepresentation.getRealm() == null) {
-            realmRepresentation.setRealm(registry.getCurrentContext().getRequiredTestClass().getSimpleName());
+            String realmName = instanceContext.getRef();
+            realmRepresentation.setRealm(realmName);
         }
 
         String realmName = realmRepresentation.getRealm();
-        wrapper.addNote(REALM_NAME_KEY, realmName);
+        instanceContext.addNote(REALM_NAME_KEY, realmName);
 
         adminClient.realms().create(realmRepresentation);
 
+        // TODO Token needs to be invalidated after creating realm to have roles for new realm in the token. Maybe lightweight access tokens could help.
+        adminClient.tokenManager().invalidate(adminClient.tokenManager().getAccessTokenString());
+
         RealmResource realmResource = adminClient.realm(realmRepresentation.getRealm());
-        wrapper.setValue(realmResource);
-
-        return wrapper;
+        return new ManagedRealm(server.getBaseUrl() + "/realms/" + realmName, realmRepresentation, realmResource);
     }
 
     @Override
-    public LifeCycle getLifeCycle() {
-        return LifeCycle.CLASS;
+    public boolean compatible(InstanceContext<ManagedRealm, InjectRealm> a, RequestedInstance<ManagedRealm, InjectRealm> b) {
+        return a.getAnnotation().config().equals(b.getAnnotation().config());
     }
 
     @Override
-    public boolean compatible(InstanceWrapper<RealmResource, TestRealm> a, InstanceWrapper<RealmResource, TestRealm> b) {
-        return a.getAnnotation().config().equals(b.getAnnotation().config()) &&
-                a.getNote(REALM_NAME_KEY, String.class).equals(b.getNote(REALM_NAME_KEY, String.class));
-    }
-
-    @Override
-    public void close(RealmResource realm) {
-        realm.remove();
+    public void close(InstanceContext<ManagedRealm, InjectRealm> instanceContext) {
+        instanceContext.getValue().admin().remove();
     }
 
 }

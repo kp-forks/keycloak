@@ -168,8 +168,6 @@ export const prettyPrintJSON = (value: any) => JSON.stringify(value, null, 2);
 export const addTrailingSlash = (url: string) =>
   url.endsWith("/") ? url : url + "/";
 
-export const generateId = () => Math.floor(Math.random() * 1000);
-
 export const localeToDisplayName = (locale: string, displayLocale: string) => {
   try {
     return new Intl.DisplayNames([displayLocale], { type: "language" }).of(
@@ -177,7 +175,7 @@ export const localeToDisplayName = (locale: string, displayLocale: string) => {
       // Once the existing locales have been moved, this code can be removed.
       locale === "zh-CN" ? "zh-HANS" : locale === "zh-TW" ? "zh-HANT" : locale,
     );
-  } catch (error) {
+  } catch {
     return locale;
   }
 };

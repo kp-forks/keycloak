@@ -59,7 +59,9 @@ public class Profile {
 
         ADMIN2("New Admin Console", Type.DEFAULT, Feature.ADMIN_API),
 
-        LOGIN2("New Login Theme", Type.EXPERIMENTAL),
+        LOGIN2("New Login Theme", Type.DEFAULT),
+
+        LOGIN1("Legacy Login Theme", Type.DEPRECATED),
 
         DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
 
@@ -101,6 +103,7 @@ public class Profile {
         TRANSIENT_USERS("Transient users for brokering", Type.EXPERIMENTAL),
 
         MULTI_SITE("Multi-site support", Type.DISABLED_BY_DEFAULT),
+
         REMOTE_CACHE("Remote caches support. Requires Multi-site support to be enabled as well.", Type.EXPERIMENTAL),
 
         CLIENT_TYPES("Client Types", Type.EXPERIMENTAL),

@@ -23,7 +23,7 @@ import { ReactNode, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Form } from "react-router-dom";
-import { useAlerts } from "../alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { UserAttribute } from "./UserDataTable";
 
 type UserDataTableAttributeSearchFormProps = {
@@ -114,10 +114,13 @@ export function UserDataTableAttributeSearchForm({
       ]);
       reset();
     } else {
-      errors.name?.message &&
+      if (errors.name?.message) {
         addAlert(errors.name.message, AlertVariant.danger);
-      errors.value?.message &&
+      }
+
+      if (errors.value?.message) {
         addAlert(errors.value.message, AlertVariant.danger);
+      }
     }
   };
 

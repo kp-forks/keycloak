@@ -6,12 +6,12 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useFetch } from "../utils/useFetch";
 import { useParams } from "../utils/useParams";
-import { PAGE_PROVIDER, TAB_PROVIDER } from "./PageList";
+import { type PAGE_PROVIDER, TAB_PROVIDER } from "./PageList";
 import { toPage } from "./routes";
 
 type PageHandlerProps = {
@@ -70,7 +70,7 @@ export const PageHandler = ({
       } else {
         await adminClient.components.create(updatedComponent);
       }
-      addAlert("itemSaveSuccessful");
+      addAlert(t("itemSaveSuccessful"));
     } catch (error) {
       addError("itemSaveError", error);
     }

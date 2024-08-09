@@ -1,8 +1,10 @@
 package org.keycloak.test.framework.server;
 
+import java.util.List;
+
 public interface KeycloakTestServer {
 
-    void start(KeycloakTestServerConfig serverConfig);
+    void start(List<String> rawOptions);
 
     void stop();
 

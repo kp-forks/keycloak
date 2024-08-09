@@ -19,6 +19,7 @@ package org.keycloak.models.sessions.infinispan.entities;
 
 import java.util.Objects;
 
+import org.infinispan.api.annotations.indexing.Indexed;
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.infinispan.protostream.annotations.ProtoTypeId;
@@ -28,6 +29,7 @@ import org.keycloak.marshalling.Marshalling;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @ProtoTypeId(Marshalling.LOGIN_FAILURE_ENTITY)
+@Indexed
 public class LoginFailureEntity extends SessionEntity {
 
     private final String userId;
@@ -51,7 +53,7 @@ public class LoginFailureEntity extends SessionEntity {
         this.numFailures = numFailures;
         this.numTemporaryLockouts = numTemporaryLockouts;
         this.lastFailure = lastFailure;
-        this.lastIPFailure = Marshalling.emptyStringToNull(lastIPFailure);
+        this.lastIPFailure = lastIPFailure;
     }
 
     @ProtoField(2)

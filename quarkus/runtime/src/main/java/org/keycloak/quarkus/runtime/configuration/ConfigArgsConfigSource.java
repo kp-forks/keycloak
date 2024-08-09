@@ -47,6 +47,8 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
  */
 public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
+    public static final String SPI_OPTION_PREFIX = "--spi";
+
     public static final Set<String> SHORT_OPTIONS_ACCEPTING_VALUE = Set.of(Main.PROFILE_SHORT_NAME, Main.CONFIG_FILE_SHORT_NAME);
 
     public static final String CLI_ARGS = "kc.config.args";
@@ -156,8 +158,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                 // the weaknesses here:
                 // - needs to know all of the short name options that accept a value
                 // - does not know all of the picocli parsing rules. picocli will accept -cffile, and short option grouping - that's not accounted for
-                // - does not understand spi options, they will be assumed to be unary
-                if (mapper != null || SHORT_OPTIONS_ACCEPTING_VALUE.contains(key)) {
+                if (mapper != null || SHORT_OPTIONS_ACCEPTING_VALUE.contains(key) || arg.startsWith(SPI_OPTION_PREFIX)) {
                     i++; // consume next as a value to the key
                     value = args.get(i);
                 } else {

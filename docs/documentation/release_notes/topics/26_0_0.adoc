@@ -22,3 +22,92 @@ WARNING: JBoss Marshalling and Infinispan Protostream are not compatible with ea
 Consequently, all caches are cleared when upgrading to this version.
 
 Infinispan Protostream is based on https://protobuf.dev/programming-guides/proto3/[Protocol Buffers] (proto 3), which has the advantage of backwards/forwards compatibility.
+
+= Group-related events no longer fired when removing a realm
+
+With the goal of improving the scalability of groups, they are now removed directly from the database when removing a realm.
+As a consequence, group-related events like the `GroupRemovedEvent` are no longer fired when removing a realm.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Persisting revoked access tokens across restarts
+
+In this release, revoked access tokens are written to the database and reloaded when the cluster is restarted by default when using the embedded caches.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Keycloak CR supports standard scheduling options
+
+The Keycloak CR now exposes first class properties for controlling the scheduling of your Keycloak Pods.
+
+For more details, see the
+https://www.keycloak.org/operator/advanced-configuration[Operator Advanced Configuration].
+
+= KeycloakRealmImport CR supports placeholder replacement
+
+The KeycloakRealmImport CR now exposes `spec.placeholders` to create environment variables for placeholder replacement in the import.
+
+For more details, see the
+https://www.keycloak.org/operator/realm-import[Operator Realm Import].
+
+= Configuring the LDAP Connection Pool
+
+In this release, the LDAP connection pool configuration relies solely on system properties.
+
+For more details, see link:{adminguide_link}#_ldap_connection_pool[Configuring the connection pool].
+
+= The `java-keystore` key provider supports more algorithms and vault secrets
+
+The `java-keystore` key provider, which allows loading a realm key from an external java keystore file, has been modified to manage all {project_name} algorithms. Besides, the keystore and key secrets, needed to retrieve the actual key from the store, can be configured using the link:{adminguide_link}#_vault-administration[vault]. Therefore a {project_name} realm can externalize any key to the encrypted file without sensitive data stored in the database.
+
+For more information about this subject, see link:{adminguide_link}#realm_keys[Configuring realm keys].
+
+= Customizable Footer in login Themes
+
+The `template.ftl` file in the `base/login` and the `keycloak.v2/login` theme now allows to customize the footer
+of the login box. This can be used to show common links or include custom scripts at the end of the page.
+
+The new `footer.ftl` template provides a `content` macro that is rendered at the bottom of the "login box".
+
+= Deprecating `keycloak` login Theme
+
+The `keycloak` login theme has been deprecated in favour of the new `keycloak.v2` and will be removed in a future version.
+While it remains the default for the new realms for compatibility reasons, it is strongly recommended to switch all the
+realm themes to `keycloak.v2`.
+
+= Highly available multi-site deployments
+
+{project_name} 26 introduces significant improvements to the recommended HA multi-site architecture, most notably:
+
+- {project_name} deployments on each site are now able to handle user requests simultaneously, therefore active/active setups are now supported.
+
+- The loadbalancer blueprint has been updated to use the AWS Global Accelerator as this avoids prolonged fail-over times caused by DNS caching by clients.
+
+- Persistent user sessions are now a requirement of the architecture. Consequently, user sessions will be kept
+on {project_name} or {jdgserver_name} upgrades.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Admin Bootstrapping and Recovery
+
+In the past, regaining access to a {project_name} instance when all admin users were locked out was a challenging and complex process. Recognizing these challenges and aiming to significantly enhance the user experience, {project_name} now offers several straightforward methods to bootstrap a temporary admin account and recover lost admin access.
+
+It is now possible to run the `start` or `start-dev` commands with specific options to create a temporary admin account. Additionally, a new dedicated command has been introduced, which allows users to regain admin access without hassle.
+
+For detailed instructions and more information on this topic, refer to the link:{bootstrapadminrecovery_link}[{bootstrapadminrecovery_name}] guide.
+
+= Identity Providers no longer available from the realm representation
+
+As part of the improvements around the scalability of realms and organizations when they have many identity providers, the realm representation
+no longer holds the list of identity providers. However, they are still available from the realm representation
+when exporting a realm.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Adding support for ECDH-ES encryption key management algorithms
+
+Now {project_name} allows configuring ECDH-ES, ECDH-ES+A128KW, ECDH-ES+A192KW or ECDH-ES+A256KW as the encryption key management algorithm for clients. The Key Agreement with Elliptic Curve Diffie-Hellman Ephemeral Static (ECDH-ES) specification introduces three new header parameters for the JWT: `epk`, `apu` and `apv`. Currently {project_name} implementation only manages the compulsory `epk` while the other two (which are optional) are never added to the header. For more information about those algorithms please refer to the link:https://datatracker.ietf.org/doc/html/rfc7518#section-4.6[JSON Web Algorithms (JWA)].
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/justin-tay[Justin Tay] for the contribution.
+endif::[]

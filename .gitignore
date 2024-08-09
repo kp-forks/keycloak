@@ -98,6 +98,9 @@ node
 # Vite
 dist
 
+!/quarkus/dist
+!/quarkus/**/src/**/dist
+
 # ESLint
 .eslintcache
 
@@ -109,3 +112,5 @@ node_modules
 
 # JENV
 .java-version
+
+.env

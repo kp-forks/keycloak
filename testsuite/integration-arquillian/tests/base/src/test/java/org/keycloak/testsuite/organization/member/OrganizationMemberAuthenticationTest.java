@@ -43,12 +43,11 @@ public class OrganizationMemberAuthenticationTest extends AbstractOrganizationTe
         openIdentityFirstLoginPage(member.getEmail(), false, null, false, false);
 
         Assert.assertTrue(loginPage.isPasswordInputPresent());
-        Assert.assertEquals(member.getEmail(), loginPage.getUsername());
         // no idp should be shown because there is only a single idp that is bound to an organization
         Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
         // the member should be able to log in using the credentials
-        loginPage.login(member.getEmail(), memberPassword);
+        loginPage.login(memberPassword);
         appPage.assertCurrent();
     }
 
@@ -75,7 +74,7 @@ public class OrganizationMemberAuthenticationTest extends AbstractOrganizationTe
     }
 
     @Test
-    public void testAuthenticateUnmanagedMemberWehnProviderDisabled() throws IOException {
+    public void testAuthenticateUnmanagedMemberWhenProviderDisabled() throws IOException {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         UserRepresentation member = addMember(organization, "contractor@contractor.org");
 
@@ -87,7 +86,7 @@ public class OrganizationMemberAuthenticationTest extends AbstractOrganizationTe
 
         // disable the organization provider
         try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm())
-                .setOrganizationEnabled(Boolean.FALSE)
+                .setOrganizationsEnabled(Boolean.FALSE)
                 .update()) {
 
             // access the page again, now it should be present username and password fields

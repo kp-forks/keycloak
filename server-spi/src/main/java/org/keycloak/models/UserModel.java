@@ -17,7 +17,11 @@
 
 package org.keycloak.models;
 
+import static org.keycloak.utils.StringUtil.isBlank;
+
 import org.keycloak.provider.ProviderEvent;
+import org.keycloak.storage.StorageId;
+import org.keycloak.utils.StringUtil;
 
 import java.util.Comparator;
 import java.util.List;
@@ -195,6 +199,9 @@ public interface UserModel extends RoleMapperModel {
     }
 
     void joinGroup(GroupModel group);
+    default void joinGroup(GroupModel group, MembershipMetadata metadata) {
+        joinGroup(group);
+    }
     void leaveGroup(GroupModel group);
     boolean isMemberOf(GroupModel group);
 
@@ -203,6 +210,16 @@ public interface UserModel extends RoleMapperModel {
 
     String getServiceAccountClientLink();
     void setServiceAccountClientLink(String clientInternalId);
+
+    /**
+     * Indicates if this {@link UserModel} maps to a local account or an account
+     * federated from an external user storage.
+     *
+     * @return {@code true} if a local account. Otherwise, {@code false}.
+     */
+    default boolean isLocal() {
+        return isBlank(getFederationLink()) && StorageId.isLocalStorage(getId());
+    }
 
     /**
      * Instance of a user credential manager to validate and update the credentials of this user.

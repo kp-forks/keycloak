@@ -68,6 +68,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipType;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -279,12 +281,14 @@ public class ExportUtils {
                     return domain;
                 }).forEach(org::addDomain);
 
-                orgProvider.getMembersStream(m, null, null, -1, -1)
-                        .map(user -> {
-                            UserRepresentation member = new UserRepresentation();
+                orgProvider.getMembersStream(m, null, null, null, null)
+                        .forEach(user -> {
+                            MemberRepresentation member = new MemberRepresentation();
                             member.setUsername(user.getUsername());
-                            return member;
-                        }).forEach(org::addMember);
+                            member.setMembershipType(orgProvider.isManagedMember(m, user) ? MembershipType.MANAGED : MembershipType.UNMANAGED);
+
+                            org.addMember(member);
+                        });
 
                 orgProvider.getIdentityProviders(m)
                         .map(b -> {
@@ -463,10 +467,6 @@ public class ExportUtils {
                     .filter(g -> Type.REALM.equals(g.getType()))
                     .map(ModelToRepresentation::buildGroupPath).collect(Collectors.toList());
             userRep.setGroups(groups);
-        }
-
-        if (userRep.getAttributes() != null) {
-            userRep.getAttributes().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
         }
 
         return userRep;

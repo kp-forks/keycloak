@@ -9,6 +9,10 @@ Consequently, all caches are cleared when upgrading to this version.
 
 To prevent losing user sessions upgrade to Keycloak 25 first and enable the persistent sessions feature as outlined in the migration guide for {project_name} 25.
 
+= Operator no longer defaults to proxy=passthrough
+
+The Operator will no longer default to the hostname v1 setting of proxy=passthrough. This allows deployments using hostname v2 for a fixed edge hostname to work as desired without additional options.
+
 = New method in `ClusterProvider` API
 
 The following method was added to `org.keycloak.cluster.ClusterProvider`:
@@ -20,3 +24,112 @@ This is an optimization to reduce traffic and network related resources.
 
 In {project_name} 26, the new method has a default implementation to keep backward compatibility with custom implementation.
 The default implementation performs a single network call per an event, and it will be removed in a future version of {project_name}.
+
+= Group-related events no longer fired when removing a realm
+
+With the goal of improving the scalability of groups, they are now removed directly from the database when removing a realm.
+As a consequence, group-related events like the `GroupRemovedEvent` are no longer fired when removing a realm.
+
+If you have extensions handling any group-related event when a realm is removed, make sure to use the `RealmRemovedEvent` instead
+to perform any cleanup or custom processing when a realm, and their groups, are removed.
+
+The `GroupProvider` interface is also updated with a new `preRemove(RealmModel)` method to force implementations to properly
+handle the removal of groups when a realm is removed.
+
+= Operator scheduling defaults
+
+Keycloak Pods will now have default affinities to prevent multiple instances from the same CR from being deployed on the same node, and all Pods from the same CR will prefer to be in the same zone to prevent stretch cache clusters.
+
+= Operator's default CPU and memory limits/requests
+
+In order to follow the best practices, the default CPU and memory limits/requests for the Operator were introduced. It affects both non-OLM and OLM installs. To override the default values for the OLM install, edit the `resources` section in the operator's https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/subscription-config.md#resources[subscription].
+
+= Deprecations in `keycloak-common` module
+
+The following items have been deprecated for removal in upcoming {project_name} versions with no replacement:
+
+- `org.keycloak.common.util.reflections.Reflections.newInstance(java.lang.Class<T>)`
+- `org.keycloak.common.util.reflections.Reflections.newInstance(java.lang.Class<?>, java.lang.String)`
+- `org.keycloak.common.util.reflections.SetAccessiblePrivilegedAction`
+- `org.keycloak.common.util.reflections.UnSetAccessiblePrivilegedAction`
+
+= Consistent usage of UTF-8 charset for URL encoding
+
+`org.keycloak.common.util.Encode` now always uses the `UTF-8` charset for URL encoding instead relying implicitly on the `file.encoding` system property.
+
+= Configuring the LDAP Connection Pool
+
+In this release, the LDAP connection pool configuration relies solely on system properties. The main
+reason is that the LDAP connection pool configuration is a JVM-level configuration rather than specific to an individual
+realm or LDAP provider instance.
+
+Compared to previous releases, any realm configuration related to the LDAP connection pool will be ignored.
+If you are migrating from previous versions where any of the following settings are set to your LDAP provider(s), consider using system properties instead:
+
+* `connectionPoolingAuthentication`
+* `connectionPoolingInitSize`
+* `connectionPoolingMaxSize`
+* `connectionPoolingPrefSize`
+* `connectionPoolingTimeout`
+* `connectionPoolingProtocol`
+* `connectionPoolingDebug`
+
+For more details, see link:{adminguide_link}#_ldap_connection_pool[Configuring the connection pool].
+
+= Custom Footer in Login Theme
+
+This release introduced the capability to easily add a custom footer to the login pages for the `base/login` and `keycloak.v2/login` theme.
+In order to use a custom footer, create a `footer.ftl` file in your custom login theme with the desired content.
+
+For more details, see link:{developerguide_link}#_theme_custom_footer[Adding a custom footer to a login theme].
+
+= Persisting revoked access tokens across restarts
+
+In this release, revoked access tokens are written to the database and reloaded when the cluster is restarted by default when using the embedded caches.
+
+To disable this behavior, use the SPI option `spi-single-use-object-infinispan-persist-revoked-tokens` as outlined in the https://www.keycloak.org/server/all-provider-config[All provider configuration] {section}.
+
+The SPI behavior of `SingleUseObjectProvider` has changed that for revoked tokens only the methods `put` and `contains` must be used.
+This is enforced by default, and can be disabled using the SPI option `spi-single-use-object-infinispan-persist-revoked-tokens`.
+
+= Highly available multi-site deployments
+
+{project_name} 26 introduces significant improvements to the recommended HA multi-site architecture, most notably:
+
+- {project_name} deployments on each site are now able to handle user requests simultaneously, therefore active/active
+setups are now supported, while previous configurations which leveraged active/passive loadbalancer will continue to work.
+
+- The loadbalancer blueprint has been updated to use the AWS Global Accelerator as this avoids prolonged fail-over times
+caused by DNS caching by clients.
+
+- Persistent user sessions are now a requirement of the architecture. Consequently, user sessions will be kept
+on {project_name} or {jdgserver_name} upgrades.
+
+- External {jdgserver_name} request handling has been improved to reduce memory usage and request latency.
+
+As a consequence of the above changes, the following changes are required to your existing {project_name} deployments.
+
+. `distributed-cache` definitions provided by a cache configuration file are ignored when the `multi-site` feature is enabled,
+so you must configure the connection to the external {jdgserver_name} deployment via the `cache-remote-*` command line arguments
+or Keycloak CR as outlined in the blueprints. If a `remote-store` configuration is detected in the cache configuration file,
+then a warning will be raised in the {project_name} logs.
+
+. Review your current cache configurations in the external {jdgserver_name} and update them with those outlined in the latest version of the {project_name}'s documentation.
+
+. While previous LoadBalancer configurations will continue to work with {project_name}, consider upgrading
+an existing Route53 configurations to avoid prolonged failover times due to client side DNS caching.
+
+= Admin Bootstrapping and Recovery
+
+It used to be difficult to regain access to a {project_name} instance when all admin users were locked out. The process required multiple advanced steps, including direct database access and manual changes. In an effort to improve the user experience, {project_name} now provides multiple ways to bootstrap a new admin account, which can be used to recover from such situations.
+
+Consequently, the environment variables `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` have been deprecated. You should use `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` instead. These are also general options, so they may be specified via the cli or other config sources, for example `--bootstrap-admin-username=admin`. For more information, see the new https://www.keycloak.org/server/bootstrap-admin-recovery[Bootstrap admin and recovery] guide.
+
+= Identity Providers no longer available from the realm representation
+
+As part of the improvements around the scalability of realms and organizations when they have many identity providers, the realm representation
+no longer holds the list of identity providers. However, they are still available from the realm representation
+when exporting a realm.
+
+To obtain the query the identity providers in a realm, prefer using the `/realms/{realm}/identity-provider/instances` endpoint.
+This endpoint supports filters and pagination.

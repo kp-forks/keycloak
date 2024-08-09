@@ -1,43 +1,20 @@
 package org.keycloak.test.framework.webdriver;
 
-import org.keycloak.test.framework.injection.InstanceWrapper;
-import org.keycloak.test.framework.injection.LifeCycle;
-import org.keycloak.test.framework.injection.Registry;
-import org.keycloak.test.framework.injection.Supplier;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
 
-public class FirefoxWebDriverSupplier implements Supplier<WebDriver, TestWebDriver> {
+public class FirefoxWebDriverSupplier extends AbstractWebDriverSupplier {
 
     @Override
-    public Class<TestWebDriver> getAnnotationClass() {
-        return TestWebDriver.class;
+    public String getAlias() {
+        return "firefox";
     }
 
     @Override
-    public Class<WebDriver> getValueType() {
-        return WebDriver.class;
+    public WebDriver getWebDriver() {
+        FirefoxOptions options = new FirefoxOptions();
+        setGlobalOptions(options);
+        return new FirefoxDriver(options);
     }
-
-    @Override
-    public InstanceWrapper<WebDriver, TestWebDriver> getValue(Registry registry, TestWebDriver annotation) {
-        final var driver = new FirefoxDriver();
-        return new InstanceWrapper<>(this, annotation, driver);
-    }
-
-    @Override
-    public LifeCycle getLifeCycle() {
-        return LifeCycle.GLOBAL;
-    }
-
-    @Override
-    public boolean compatible(InstanceWrapper<WebDriver, TestWebDriver> a, InstanceWrapper<WebDriver, TestWebDriver> b) {
-        return true;
-    }
-
-    @Override
-    public void close(WebDriver instance) {
-        instance.close();
-    }
-
 }

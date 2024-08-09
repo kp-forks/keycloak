@@ -101,6 +101,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
 import static org.keycloak.organization.utils.Organizations.resolveOrganization;
@@ -479,7 +480,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         if (realm != null) {
             attributes.put("realm", new RealmBean(realm));
 
-            List<IdentityProviderModel> identityProviders = LoginFormsUtil
+            Stream<IdentityProviderModel> identityProviders = LoginFormsUtil
                     .filterIdentityProvidersForTheme(realm.getIdentityProvidersStream(), session, context);
             IdentityProviderBean idpBean = new IdentityProviderBean(realm, session, identityProviders, baseUriWithCodeAndClientId);
 
@@ -548,7 +549,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 OrganizationModel organization = resolveOrganization(session, user);
 
                 if (organization != null) {
-                    attributes.put("org", new OrganizationBean(session, organization, user));
+                    attributes.put("org", new OrganizationBean(organization, user));
                 }
             }
         }

@@ -26,9 +26,11 @@ import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.models.OrganizationModel;
@@ -37,6 +39,7 @@ import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -78,6 +81,11 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     protected AppPage appPage;
 
     protected BrokerConfiguration bc = brokerConfigFunction.apply(organizationName);
+
+    @Override
+    protected TestCleanup getCleanup() {
+        return getCleanup(TEST_REALM_NAME);
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -141,18 +149,20 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             org.addDomain(domainRep);
         }
 
+        org.setAttributes(Map.of("key", List.of("value1", "value2")));
+
         return org;
     }
 
-    protected UserRepresentation addMember(OrganizationResource organization) {
+    protected MemberRepresentation addMember(OrganizationResource organization) {
         return addMember(organization, memberEmail);
     }
 
-    protected UserRepresentation addMember(OrganizationResource organization, String email) {
+    protected MemberRepresentation addMember(OrganizationResource organization, String email) {
         return addMember(organization, email, null, null);
     }
 
-    protected UserRepresentation addMember(OrganizationResource organization, String email, String firstName, String lastName) {
+    protected MemberRepresentation addMember(OrganizationResource organization, String email, String firstName, String lastName) {
         UserRepresentation expected = new UserRepresentation();
 
         expected.setEmail(email);
@@ -172,7 +182,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
         try (Response response = organization.members().addMember(userId)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
-            UserRepresentation actual = organization.members().member(userId).toRepresentation();
+            MemberRepresentation actual = organization.members().member(userId).toRepresentation();
 
             assertNotNull(expected);
             assertEquals(userId, actual.getId());
@@ -183,11 +193,11 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         }
     }
 
-    protected void assertBrokerRegistration(OrganizationResource organization, String email) {
+    protected void assertBrokerRegistration(OrganizationResource organization, String username, String email) {
         // login with email only
         openIdentityFirstLoginPage(email, true, null, false, false);
 
-        loginOrgIdp(email, email, true, true);
+        loginOrgIdp(username, email, true, true);
 
         assertIsMember(email, organization);
     }
@@ -209,6 +219,12 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         if (redirectToApp) {
             appPage.assertCurrent();
             assertThat(appPage.getRequestType(), is(AppPage.RequestType.AUTH_RESPONSE));
+        }
+
+        List<UserRepresentation> users = realmsResouce().realm(bc.consumerRealmName()).users().search(username, Boolean.TRUE);
+        if (!users.isEmpty()) {
+            assertThat(users, Matchers.hasSize(1));
+            getCleanup(bc.consumerRealmName()).addUserId(users.get(0).getId());
         }
     }
 
@@ -250,37 +266,37 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         };
     }
 
-    protected void openIdentityFirstLoginPage(String username, boolean autoIDPRedirect, IdentityProviderRepresentation idp, boolean isVisible, boolean clickIdp) {
+    protected void openIdentityFirstLoginPage(String username, boolean autoIDPRedirect, String idpAlias, boolean isVisible, boolean clickIdp) {
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
         log.debug("Logging in");
         Assert.assertFalse(loginPage.isPasswordInputPresent());
         Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
         Assert.assertTrue(loginPage.isRegisterLinkPresent());
-        if (idp != null) {
+        if (idpAlias != null) {
             if (isVisible) {
-                Assert.assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
+                Assert.assertTrue(loginPage.isSocialButtonPresent(idpAlias));
             } else {
-                Assert.assertFalse(loginPage.isSocialButtonPresent(idp.getAlias()));
+                Assert.assertFalse(loginPage.isSocialButtonPresent(idpAlias));
             }
         }
         loginPage.loginUsername(username);
 
         if (clickIdp) {
             assertTrue(loginPage.isPasswordInputPresent());
-            assertTrue(loginPage.isUsernameInputPresent());
-            loginPage.clickSocial(idp.getAlias());
+            assertTrue(loginPage.isSocialButtonPresent(idpAlias));
+            loginPage.clickSocial(idpAlias);
         }
 
         waitForPage(driver, "sign in to", true);
 
         // user automatically redirected to the organization identity provider
         if (autoIDPRedirect) {
-            Assert.assertTrue("Driver should be on the provider realm page right now",
-                    driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+            assertThat("Driver should be on the provider realm page right now",
+                    driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.providerRealmName() + "/"));
         } else {
-            Assert.assertTrue("Driver should be on the consumer realm page right now",
-                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+            assertThat("Driver should be on the consumer realm page right now",
+                    driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.consumerRealmName() + "/"));
         }
     }
 }
